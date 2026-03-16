@@ -153,7 +153,7 @@ What makes PromptBI accurate is not just calling an LLM — it's **what we tell 
 ## 📁 Project Structure
 
 ```
-Query-Dash/
+PromptBI/
 │
 ├── 📂 backend/
 │   ├── main.py           ← FastAPI server (API routes)
@@ -198,8 +198,8 @@ Make sure you have these installed:
 
 **1. Clone the repository**
 ```bash
-git clone https://github.com/tanya324/Query-Dash.git
-cd Query-Dash
+git clone https://github.com/tanya324/.git
+cd PromptBI
 ```
 
 **2. Set up the backend**
@@ -239,8 +239,8 @@ npm run dev
 ### Option B — Run with Docker (One Command)
 
 ```bash
-git clone https://github.com/tanya324/Query-Dash.git
-cd Query-Dash
+git clone https://github.com/tanya324/PromptBI.git
+cd PromptBI
 
 # Add your API key to a .env file in the root
 echo "GEMINI_API_KEY=your_api_key_here" > .env
