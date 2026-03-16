@@ -27,7 +27,7 @@
 
 ## 📖 Table of Contents
 
-- [What is Query Dash?](#-what-is-query-dash)
+- [What is PromptBi?](#-what-is-query-dash)
 - [Live Demo](#-live-demo)
 - [Features](#-features)
 - [How It Works](#-how-it-works)
@@ -41,16 +41,16 @@
 
 ---
 
-## 🧠 What is Query Dash?
+## 🧠 What is PromptBi?
 
-**Query Dash** is an AI-powered Business Intelligence platform that eliminates the gap between business questions and data answers.
+**PromptBi** is an AI-powered Business Intelligence platform that eliminates the gap between business questions and data answers.
 
 In most organisations, getting a simple chart requires:
 1. Writing a ticket to the data team
 2. Waiting 2–3 days
 3. Receiving a static screenshot
 
-**Query Dash changes this entirely.** A non-technical executive types a question in plain English — and within seconds, a fully interactive, multi-chart dashboard appears. No SQL. No BI tool training. No waiting.
+**PromptBi changes this entirely.** A non-technical executive types a question in plain English — and within seconds, a fully interactive, multi-chart dashboard appears. No SQL. No BI tool training. No waiting.
 
 ### Who is it for?
 
@@ -125,7 +125,7 @@ In most organisations, getting a simple chart requires:
 
 ### The Prompt Engineering Pipeline
 
-What makes Query Dash accurate is not just calling an LLM — it's **what we tell the LLM before every query**:
+What makes PromptBi accurate is not just calling an LLM — it's **what we tell the LLM before every query**:
 
 1. **Schema Injection** — Full table structure, column names, data types, and value ranges are prepended to every prompt so Gemini never guesses column names
 2. **Chart Selection Rules** — Explicit rules map data shapes to chart types (time-series → line, categorical → bar, parts-of-whole → pie)
@@ -393,7 +393,7 @@ This project was built as part of a B.Tech academic hackathon project.
 
 *Built with 🤖 Gemini AI · ⚡ FastAPI · ⚛️ React*
 
-**Query Dash — because data should answer to you, not the other way around.**
+**PromptBi — because data should answer to you, not the other way around.**
 
 <br/>
 
