@@ -41,6 +41,14 @@
 .q-sb:disabled{opacity:.35;cursor:not-allowed}
 .q-cl{height:2px;background:linear-gradient(90deg,var(--cy),transparent);opacity:.3}
 
+/* mic */
+.mic-btn{display:inline-flex;align-items:center;gap:7px;background:rgba(255,255,255,0.03);border:1px solid var(--bo);border-radius:10px;padding:9px 12px;margin-top:2px;color:var(--t2);font-family:var(--font-mono);font-size:11px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.mic-btn:hover:not(:disabled){border-color:var(--cy);background:var(--ct);color:var(--tx)}
+.mic-btn:disabled{opacity:.35;cursor:not-allowed}
+.mic-btn.on{border-color:rgba(230,57,70,.45);background:rgba(230,57,70,.08);color:var(--tx)}
+.mic-ico{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;border-radius:6px;background:rgba(255,255,255,0.04);color:currentColor}
+.mic-lbl{letter-spacing:.06em}
+
 /* Typing suggestions (extensible feature) */
 .ts-pop{position:absolute;left:0;right:0;top:calc(100% + 10px);z-index:50;background:var(--bg3);border:1px solid var(--bo);border-radius:10px;overflow:hidden;box-shadow:0 10px 35px rgba(0,0,0,.35)}
 .ts-h{padding:9px 12px;border-bottom:1px solid var(--bo);font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--t3);text-transform:uppercase}

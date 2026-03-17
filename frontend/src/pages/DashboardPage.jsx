@@ -3,6 +3,7 @@ import { submitQuery, getStats, getSamples, checkHealth, SESSION_STORAGE_KEY } f
 import ChartCard from '../components/ChartCard'
 import TypingSuggestions from '../extensible-features/typing-suggestions/TypingSuggestions'
 import { isValidNaturalLanguageQuery } from '../extensible-features/typing-suggestions/queryValidation'
+import VoiceInputButton from '../extensible-features/voice-input/VoiceInputButton'
 import './DashboardPage.css'
 
 const EXAMPLE_QUERIES = [
@@ -239,6 +240,18 @@ export default function DashboardPage({ initialQuery, sessionId, onGoHome }) {
                 onSelect={handleSuggestion}
               />
             </div>
+            <VoiceInputButton
+              disabled={loading}
+              onText={(text) => {
+                setQuery((prev) => {
+                  const p = String(prev || '').trim()
+                  if (!p) return text
+                  if (p.endsWith('.') || p.endsWith('?') || p.endsWith('!')) return `${p} ${text}`
+                  return `${p} ${text}`
+                })
+              }}
+              onError={(msg) => setError({ type: 'server', msg })}
+            />
             <button className="q-sb" disabled={loading || !query.trim()} onClick={() => runQuery()}>
               {loading
                 ? <span className="mspin" />
