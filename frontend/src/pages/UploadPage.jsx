@@ -2,7 +2,7 @@ import { useState, useRef } from 'react'
 import { uploadCSV } from '../services/api'
 import './UploadPage.css'
 
-export default function UploadPage({ onStartQuerying }) {
+export default function UploadPage({ onStartQuerying, sessionId }) {
   const [file, setFile]           = useState(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress]   = useState(0)
@@ -31,6 +31,11 @@ export default function UploadPage({ onStartQuerying }) {
       <div className="u-box">
         <h1 className="u-title">Connect your data</h1>
         <p className="u-sub">Securely upload your dataset to begin autonomous analysis.</p>
+        {sessionId && !result && !uploading && (
+          <div className="u-err" style={{ borderColor: 'rgba(0,184,217,.35)', background: 'rgba(0,184,217,.06)' }}>
+            ✓ Dataset already uploaded for this tab/session. You can continue without uploading again.
+          </div>
+        )}
 
         <div className="dz"
           onDragOver={e => e.preventDefault()}
@@ -104,8 +109,8 @@ export default function UploadPage({ onStartQuerying }) {
 
         {!result && <div className="or-sep">— or use the built-in 1M video analytics dataset —</div>}
 
-        <button className="btn-start" onClick={() => onStartQuerying(result?.session_id || null)}>
-          Start Querying →
+        <button className="btn-start" onClick={() => onStartQuerying(result?.session_id || sessionId || null)}>
+          {result?.session_id || sessionId ? 'Start Querying →' : 'Start Querying →'}
         </button>
 
         <div className="trust">

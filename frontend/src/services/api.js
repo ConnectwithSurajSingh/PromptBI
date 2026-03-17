@@ -27,6 +27,8 @@ const api = axios.create({
   },
 });
 
+export const SESSION_STORAGE_KEY = "promptbi.session_id";
+
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // FUNCTION 1 — submitQuery
@@ -222,6 +224,16 @@ export async function uploadCSV(file, onProgress = null) {
       success: false,
       error:   error.response?.data?.detail || error.message || "Upload failed.",
     };
+  }
+}
+
+export async function closeSession(sessionId) {
+  if (!sessionId) return { success: true, closed: false };
+  try {
+    const response = await api.post("/session/close", { session_id: sessionId });
+    return response.data;
+  } catch (error) {
+    return { success: false, error: error.message };
   }
 }
 

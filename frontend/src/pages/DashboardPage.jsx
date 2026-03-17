@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { submitQuery, getStats, getSamples, checkHealth } from '../services/api'
-import ChartRenderer from '../components/ChartRenderer'
+import { submitQuery, getStats, getSamples, checkHealth, SESSION_STORAGE_KEY } from '../services/api'
+import ChartCard from '../components/ChartCard'
+import TypingSuggestions from '../extensible-features/typing-suggestions/TypingSuggestions'
+import { isValidNaturalLanguageQuery } from '../extensible-features/typing-suggestions/queryValidation'
 import './DashboardPage.css'
 
 const EXAMPLE_QUERIES = [
@@ -46,7 +48,7 @@ function SkeletonSection() {
   )
 }
 
-export default function DashboardPage({ initialQuery, sessionId }) {
+export default function DashboardPage({ initialQuery, sessionId, onGoHome }) {
   const [query, setQuery]       = useState(initialQuery || '')
   const [loading, setLoading]   = useState(false)
   const [result, setResult]     = useState(null)
@@ -57,7 +59,10 @@ export default function DashboardPage({ initialQuery, sessionId }) {
   const [convHistory, setConvHistory] = useState([])
   const [animIn, setAnimIn]     = useState(false)
   const [activeChip, setActiveChip]   = useState(null)
+  const [activeSug, setActiveSug] = useState(null)
   const textareaRef = useRef()
+
+  const historyKey = `promptbi.history.${sessionId || 'default'}`
 
   useEffect(() => {
     Promise.all([getStats(sessionId), getSamples(), checkHealth()]).then(([s, q, h]) => {
@@ -67,6 +72,36 @@ export default function DashboardPage({ initialQuery, sessionId }) {
     })
     if (initialQuery) runQuery(initialQuery)
   }, [])
+
+  // Restore history for this dataset/session (survives refresh; clears on tab close).
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem(historyKey)
+      if (!raw) return
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) setConvHistory(parsed)
+    } catch {
+      // ignore
+    }
+  }, [historyKey])
+
+  // Best-effort cleanup: when the tab closes, ask backend to delete the uploaded dataset DB.
+  useEffect(() => {
+    const sid = sessionId || sessionStorage.getItem(SESSION_STORAGE_KEY)
+    if (!sid) return
+
+    const handler = () => {
+      try {
+        const url = (import.meta.env.VITE_API_URL || 'http://localhost:8000') + '/session/close'
+        navigator.sendBeacon(url, JSON.stringify({ session_id: sid }))
+      } catch {
+        // ignore
+      }
+    }
+
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [sessionId])
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -79,6 +114,14 @@ export default function DashboardPage({ initialQuery, sessionId }) {
     const text = (q ?? query).trim()
     if (!text) return
 
+    if (!isValidNaturalLanguageQuery(text)) {
+      setLoading(false)
+      setResult(null)
+      setAnimIn(false)
+      setError({ type:'unanswerable', msg: 'Query is not valid. Please ask a clear question in English (e.g. “Show views by region”).' })
+      return
+    }
+
     setLoading(true); setResult(null); setError(null); setAnimIn(false)
 
     const newHist = [...convHistory, { role:'user', content: text }]
@@ -87,7 +130,9 @@ export default function DashboardPage({ initialQuery, sessionId }) {
 
     if (data.success) {
       setResult(data)
-      setConvHistory([...newHist, { role:'model', content: JSON.stringify(data) }])
+      const updated = [...newHist, { role:'model', content: JSON.stringify(data) }]
+      setConvHistory(updated)
+      try { sessionStorage.setItem(historyKey, JSON.stringify(updated)) } catch { /* ignore */ }
       requestAnimationFrame(() => requestAnimationFrame(() => setAnimIn(true)))
     } else if (data.answerable === false) {
       setError({ type:'unanswerable', msg: data.reason })
@@ -97,14 +142,39 @@ export default function DashboardPage({ initialQuery, sessionId }) {
   }, [query, sessionId, convHistory])
 
   const handleChip = (q, index) => {
+    // Toggle behavior: click again to deselect.
+    if (activeChip === index) {
+      setActiveChip(null)
+      return
+    }
     setQuery(q)
     setActiveChip(index)
     runQuery(q)
   }
 
+  const handleSuggestion = (s) => {
+    setQuery(s)
+    setActiveSug(null)
+    runQuery(s)
+  }
+
+  const userHistory = (convHistory || []).filter(m => m?.role === 'user' && m?.content).map(m => m.content)
+
+  const rerunFromHistory = (text) => {
+    setQuery(text)
+    runQuery(text)
+  }
+
+  const clearHistory = () => {
+    setConvHistory([])
+    try { sessionStorage.removeItem(historyKey) } catch { /* ignore */ }
+  }
+
   const handleReset = () => {
     setQuery(''); setResult(null); setError(null)
     setAnimIn(false); setActiveChip(null); setConvHistory([])
+    setActiveSug(null)
+    try { sessionStorage.removeItem(historyKey) } catch { /* ignore */ }
   }
 
   return (
@@ -112,7 +182,15 @@ export default function DashboardPage({ initialQuery, sessionId }) {
 
       {/* ── TOP NAV ── */}
       <header className="d-nav">
-        <div className="d-logo"><span className="lt">PROMPTBI</span><span className="ld">.</span></div>
+        <button
+          type="button"
+          className="d-logo d-logo-btn"
+          onClick={() => onGoHome?.()}
+          aria-label="Go to home"
+          title="Home"
+        >
+          <span className="lt">PROMPTBI</span><span className="ld">.</span>
+        </button>
         <div className="d-nav-mid">
           <span className="d-slash">/</span>
           <span className="d-title">{result?.dashboard_title || 'Dashboard'}</span>
@@ -144,15 +222,23 @@ export default function DashboardPage({ initialQuery, sessionId }) {
           </div>
           <div className="q-row">
             <span className="q-pr">&gt;</span>
-            <textarea
-              ref={textareaRef}
-              className="q-ta"
-              rows={1}
-              value={query}
-              onChange={e => setQuery(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runQuery() } }}
-              placeholder="Ask anything about your data... e.g. Show monthly views trend"
-            />
+            <div className="q-ta-wrap">
+              <textarea
+                ref={textareaRef}
+                className="q-ta"
+                rows={1}
+                value={query}
+                onChange={e => { setQuery(e.target.value); setActiveSug(null) }}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); runQuery() } }}
+                placeholder="Ask anything about your data... e.g. Show monthly views trend"
+              />
+              <TypingSuggestions
+                value={query}
+                suggestions={samples}
+                activeIndex={activeSug}
+                onSelect={handleSuggestion}
+              />
+            </div>
             <button className="q-sb" disabled={loading || !query.trim()} onClick={() => runQuery()}>
               {loading
                 ? <span className="mspin" />
@@ -175,6 +261,29 @@ export default function DashboardPage({ initialQuery, sessionId }) {
             </button>
           ))}
         </div>
+
+        {/* history */}
+        {userHistory.length > 0 && (
+          <div className="q-hist">
+            <div className="q-hh">
+              <div className="q-hl">History (this dataset)</div>
+              <button type="button" className="q-hc" onClick={clearHistory}>Clear</button>
+            </div>
+            <div className="q-hl2">
+              {userHistory.slice().reverse().slice(0, 8).map((h, idx) => (
+                <button
+                  key={`${h}-${idx}`}
+                  type="button"
+                  className="q-hb"
+                  onClick={() => rerunFromHistory(h)}
+                  title="Click to run again"
+                >
+                  {h}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* error */}
@@ -232,45 +341,36 @@ export default function DashboardPage({ initialQuery, sessionId }) {
             </div>
           )}
 
-          {/* chart */}
-          <div className={`chart-card ${animIn ? 'in' : ''}`} style={{ transitionDelay:'240ms' }}>
-            <div className="chart-card-h">
-              <span className="chart-card-t">{result.title}</span>
-              <div className="chart-leg">
-                {result.labels?.slice(0, 5).map((l, i) => (
-                  <span key={i} className="lg-i">
-                    <span className="lg-d" style={{ background: ['#00b8d9','#f5a623','#e63946','#22c55e','#a78bfa'][i] }} />
-                    {l}
-                  </span>
-                ))}
-              </div>
-            </div>
-            <ChartRenderer
-              chartType={result.chart_type}
-              labels={result.labels}
-              data={result.datasets?.[0]?.data}
-              name={result.datasets?.[0]?.name}
-            />
+          {/* charts (render all) */}
+          <div className="charts-grid">
+            {(result.charts || []).map((c, i) => (
+              <ChartCard
+                key={c.chart_id || i}
+                chart={c}
+                animIn={animIn}
+                delayMs={240 + i * 90}
+              />
+            ))}
           </div>
 
           {/* raw table */}
-          {result.charts?.[0]?.data && (
+          {result.charts?.find?.(c => c?.data?.length) && (
             <div className={`raw-card ${animIn ? 'in' : ''}`} style={{ transitionDelay:'380ms' }}>
               <div className="raw-h">
                 <span className="raw-lbl">Raw Source Data: <span className="raw-src">query_result</span></span>
-                <span className="raw-cnt">{result.charts[0].data.length} rows</span>
+                <span className="raw-cnt">{result.charts.find(c => c?.data?.length).data.length} rows</span>
               </div>
               <div className="raw-scroll">
                 <table className="rt">
                   <thead>
                     <tr>
-                      {Object.keys(result.charts[0].data[0] || {}).map(col => (
+                      {Object.keys(result.charts.find(c => c?.data?.length).data[0] || {}).map(col => (
                         <th key={col}>{col.toUpperCase()}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
-                    {result.charts[0].data.slice(0, 6).map((row, i) => (
+                    {result.charts.find(c => c?.data?.length).data.slice(0, 6).map((row, i) => (
                       <tr key={i}>
                         {Object.entries(row).map(([k, v]) => (
                           <td key={k}>

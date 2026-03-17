@@ -401,6 +401,17 @@ def _call_gemini(messages: list[dict]) -> str:
 
 
 def process_query(user_query: str, conversation_history: list[dict] = None) -> dict:
+    # Simple gibberish guard (defense in depth; frontend also validates).
+    q = (user_query or "").strip()
+    if len(q) < 6:
+        return {"success": False, "answerable": False, "reason": "Query is not valid. Please ask a clearer question."}
+    letters = sum(1 for ch in q if ch.isalpha())
+    if letters < 3:
+        return {"success": False, "answerable": False, "reason": "Query is not valid. Please ask a clearer question."}
+    weird = sum(1 for ch in q if not (ch.isalnum() or ch.isspace() or ch in ",'\".?!()-"))
+    if weird / max(len(q), 1) > 0.25:
+        return {"success": False, "answerable": False, "reason": "Query is not valid. Please ask a clearer question."}
+
     if not os.environ.get("GEMINI_API_KEY", ""):
         # No key → no Gemini. Still return a renderable dashboard from DB.
         return _fallback_dashboard(user_query)

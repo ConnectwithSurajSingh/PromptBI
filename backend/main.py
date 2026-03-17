@@ -21,7 +21,7 @@ import logging
 import shutil
 import tempfile
 
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -301,6 +301,47 @@ async def upload_csv(file: UploadFile = File(...)):
                 os.remove(path)
         logger.error(f"CSV upload failed: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to load CSV: {str(e)}")
+
+
+@app.post("/session/close")
+async def close_session(request: Request):
+    """
+    Closes an uploaded-dataset session and deletes its temporary SQLite DB.
+    Intended to be called on tab/browser close (best-effort).
+    Accepts either JSON { "session_id": "..." } or raw text containing the session_id.
+    """
+    session_id = None
+    try:
+        payload = await request.json()
+        if isinstance(payload, dict):
+            session_id = payload.get("session_id")
+    except Exception:
+        # Not JSON (e.g. sendBeacon default)
+        try:
+            body = (await request.body()).decode("utf-8", errors="ignore").strip()
+            # Accept either plain session id or a tiny json string
+            if body.startswith("{") and body.endswith("}"):
+                import json as _json
+                parsed = _json.loads(body)
+                if isinstance(parsed, dict):
+                    session_id = parsed.get("session_id")
+            else:
+                session_id = body
+        except Exception:
+            session_id = None
+
+    if not session_id:
+        return {"success": True, "closed": False}
+
+    db_path = SESSION_DBS.pop(session_id, None)
+    if db_path and os.path.exists(db_path):
+        try:
+            os.remove(db_path)
+            logger.info(f"Session closed — deleted temp DB: {db_path}")
+        except Exception as e:
+            logger.warning(f"Failed to delete temp DB {db_path}: {e}")
+
+    return {"success": True, "closed": True}
 
 
 # ── Dev server entry point ────────────────────────────────────────────────────

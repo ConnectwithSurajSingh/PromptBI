@@ -25,7 +25,12 @@ export default function LandingPage({ onGetAccess }) {
       <nav className="nav">
         <div className="logo"><span className="lt">PROMPTBI</span><span className="ld">.</span></div>
         <div className="nav-r">
-          <span className="nav-lnk">Docs</span>
+          <a
+            className="nav-lnk"
+            href="https://github.com/ConnectwithSurajSingh/PromptBI"
+            target="_blank"
+            rel="noopener noreferrer"
+          >Docs</a>
           <span className="nav-lnk">Sign In</span>
           <button className="btn-yl" onClick={() => go(null)}>Get Access →</button>
         </div>
