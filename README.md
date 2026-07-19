@@ -251,7 +251,7 @@ GEMINI_API_KEY=your_api_key_here
 
 **5. Add your dataset**
 
-Place your CSV file inside the `backend` folder and rename it to `data.csv`.
+Place your CSV file inside the `dataset` folder and rename it to `data.csv`. One has already been provided for reference.
 
 **6. Start the backend**
 ```bash
