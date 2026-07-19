@@ -189,7 +189,6 @@ PromptBI/
 │   ├── llm.py            ← Gemini integration + prompt engineering
 │   ├── db.py             ← SQLite query runner + SQL validation
 │   ├── schema.py         ← Database schema metadata for AI context
-│   ├── requirements.txt  ← Python dependencies
 │   └── Dockerfile        ← Backend container
 │
 ├── 📂 frontend/
@@ -207,6 +206,7 @@ PromptBI/
 │
 ├── docker-compose.yml     ← Runs everything with one command
 └── README.md
+└── requirements.txt      ← Python dependencies
 ```
 
 ---
