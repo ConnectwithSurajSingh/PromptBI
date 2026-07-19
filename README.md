@@ -230,32 +230,37 @@ Make sure you have these installed:
 git clone https://github.com/your_github_account_here/.git
 cd PromptBI
 ```
-
-**2. Set up the backend**
+**2. Create a virtual environment and install the dependencies**
 ```bash
-cd backend
+python -m venv virtual_env_name
+virtual_env_name\Scripts\Activat.ps1
 python -m pip install -r requirements.txt
 ```
 
-**3. Add your API key**
+**3. Set up the backend**
+```bash
+cd backend
+```
+
+**4. Add your API key**
 
 Create a `.env` file inside the `backend` folder:
 ```
 GEMINI_API_KEY=your_api_key_here
 ```
 
-**4. Add your dataset**
+**5. Add your dataset**
 
 Place your CSV file inside the `backend` folder and rename it to `data.csv`.
 
-**5. Start the backend**
+**6. Start the backend**
 ```bash
 python main.py
 ```
 ✅ Backend running at `http://localhost:8000`
 ✅ API docs at `http://localhost:8000/docs`
 
-**6. Set up and start the frontend** (new terminal)
+**7. Set up and start the frontend** (new terminal)
 ```bash
 cd frontend
 npm install
