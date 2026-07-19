@@ -266,7 +266,7 @@ cd frontend
 npm install
 npm run dev
 ```
-✅ Frontend running at `http://localhost:5173`
+✅ Frontend running at `http://localhost:3000`
 
 ---
 
